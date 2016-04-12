@@ -1,9 +1,10 @@
 {
   "name": "webpack-deps",
   "version": "0.0.1",
-  "description": "cli for webpack stats dependencies",
+  "description": "cli for webpack stats.json dependencies",
   "main": "index.js",
   "scripts": {
+    "find-deps": "node ./bin/find-deps",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
