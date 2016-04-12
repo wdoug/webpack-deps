@@ -1,0 +1,14 @@
+{
+  "name": "webpack-deps",
+  "version": "0.0.1",
+  "description": "cli for webpack stats dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.10.0"
+  }
+}

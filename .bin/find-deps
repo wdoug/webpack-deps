@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var path = require('path');
+var _ = require('lodash');
+
+var args = process.argv.slice(2);
+// console.log(__dirname, process.argv);
+// console.log('process.argv', process.argv);
+var filePath = path.join(__dirname, '..', process.argv[2]);
+
+var filesToCheck = [
+  // './nav-prototype-a/actions/ProjectActions.js',
+  // './nav-prototype-a/actions/ChildProjectActions.js',
+  // './utils/Constants.js'
+];
+
+process.stdin.resume();
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', function(data) {
+  filesToCheck = filesToCheck.concat(data.split('\n').map(function(file) { return './' + file }));
+});
+
+process.stdin.on('end', function () {
+  console.log(findAllDependentsForFiles(filesToCheck));
+});
+
+
+// why bother with callbacks when you can block?
+var stats = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+var fileDependants = stats.modules.reduce(function (obj, module) {
+  obj[module.name] = module.reasons.map(function (dependant) { return dependant.module; });
+  return obj;
+}, {});
+
+// console.log(fileDependants);
+
+function findDependentsForFiles(files) {
+  return files.reduce(function (arr, file) {
+    return arr.concat(fileDependants[file]);
+  }, []);
+}
+
+var count = 5;
+
+function logSome() {
+  if (count > 0) {
+    console.log.apply(console, arguments);
+    count--;
+  }
+}
+
+function findAllDependentsForFiles(files, allDependants) {
+  allDependants = allDependants || [];
+  var uniqueFiles = _.difference(files, allDependants);
+
+  // logSome(uniqueFiles, allDependants);
+
+  if (!uniqueFiles.length) {
+    return _.uniq(allDependants)  ;
+  }
+
+  var newDependants = findDependentsForFiles(uniqueFiles);
+
+  return findAllDependentsForFiles(newDependants, allDependants.concat(uniqueFiles));
+}
+
+// console.log(findAllDependentsForFiles(filesToCheck));
