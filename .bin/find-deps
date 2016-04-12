@@ -3,28 +3,52 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
+var yargs = require('yargs')
+              .usage('Usage: \n$0 [stats.json file] --files [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
+              .alias('f', 'files')
+              .array('f')
+              .alias('h', 'help')
+              .help();
+var argv = yargs.argv;
 
 var webpackDeps = require('../index');
 
-var statsFileName = process.argv[2] || 'webpack-stats.json';
+var statsFileName = argv._[0] || 'webpack-stats.json';
 var statsFilePath = path.join(process.cwd(), statsFileName);
-
-var filesToCheck = [
-  // './nav-prototype-a/actions/ProjectActions.js',
-  // './nav-prototype-a/actions/ChildProjectActions.js',
-  // './utils/Constants.js'
-];
 
 // why bother with callbacks when you can block?
 var stats = JSON.parse(fs.readFileSync(statsFilePath, 'utf8'));
 
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', function(data) {
-  filesToCheck = filesToCheck.concat(data.split('\n').map(function(file) { return './' + file }));
-});
+function formatFileNames(files) {
+  return files.map(function(file) {
+    return './' + path.join('.', file);
+  });
+}
 
-process.stdin.on('end', function () {
+function findDeps(filesToCheck) {
   var dependantsMap = webpackDeps.getDependentsMap(stats);
-  console.log(webpackDeps.getAllDependentsForFiles(filesToCheck, dependantsMap))
-});
+  console.log(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependantsMap));
+}
+
+if (argv.files) {
+  findDeps(argv.files);
+} else {
+  var filesToCheck = [];
+  var inputCheck;
+
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', function(data) {
+    filesToCheck = filesToCheck.concat(data.split('\n'));
+  });
+
+  inputCheck = setTimeout(function() {
+    process.stdin.pause()
+    yargs.parse(['--help']);
+  }, 100);
+
+  process.stdin.on('end', function() {
+    clearTimeout(inputCheck);
+
+    findDeps(formatFileNames(filesToCheck));
+  });
+}
