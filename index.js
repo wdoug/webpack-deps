@@ -1,8 +1,15 @@
 var _ = require('lodash');
 
+function normalizeFileName(fileName) {
+  var parts = fileName.split('!');
+  return parts[parts.length - 1];
+}
+
 function getDependentsMap(stats) {
   return stats.modules.reduce(function (obj, module) {
-    obj[module.name] = module.reasons.map(function (dependant) { return dependant.module; });
+    obj[normalizeFileName(module.name)] = module.reasons.map(function (dependant) {
+      return normalizeFileName(dependant.module);
+    });
     return obj;
   }, Object.create(null));
 }
