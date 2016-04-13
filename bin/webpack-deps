@@ -26,8 +26,11 @@ function formatFileNames(files) {
 }
 
 function findDeps(filesToCheck) {
-  var dependantsMap = webpackDeps.getDependentsMap(stats);
-  console.log(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependantsMap));
+  var dependentsMap = webpackDeps.getDependentsMap(stats);
+  webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependentsMap)
+             .forEach(function(d) {
+               process.stdout.write(d + '\n');
+             });
 }
 
 if (argv.files) {
