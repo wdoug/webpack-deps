@@ -4,9 +4,11 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var yargs = require('yargs')
-              .usage('Usage: \n$0 [stats.json file] --files [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
-              .alias('f', 'files')
+              .usage('Usage: \n$0 [stats.json file] --from [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
+              .alias('f', 'from')
               .array('f')
+              .alias('c', 'count')
+              .boolean('c')
               .alias('h', 'help')
               .help();
 var argv = yargs.argv;
@@ -25,23 +27,44 @@ function formatFileNames(files) {
   });
 }
 
-function findDeps(filesToCheck) {
-  var dependentsMap = webpackDeps.getDependentsMap(stats);
-  webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependentsMap)
-             .forEach(function(d) {
-               process.stdout.write(d + '\n');
-             });
+function writeOut(arr) {
+  arr.forEach(function(d) {
+    process.stdout.write(d + '\n');
+  });
 }
 
-if (argv.files) {
-  findDeps(argv.files);
+function findDeps(filesToCheck) {
+  var dependentsMap = webpackDeps.getDependentsMap(stats);
+  writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependentsMap));
+}
+
+function outputDependentCount(from) {
+  var dependentsMap = webpackDeps.getDependentsMap(stats);
+  from = from || Object.keys(dependentsMap);
+  writeOut(from.map(function(d) {
+    return '' + (dependentsMap[d] ? dependentsMap[d].length : 0) + '\t' +  d;
+  }));
+}
+
+function output(from) {
+  from = formatFileNames(from);
+
+  if (argv.count) {
+    outputDependentCount(from);
+  } else {
+    findDeps(from);
+  }
+}
+
+if (argv.from) {
+  output(argv.from);
 } else {
-  var filesToCheck = [];
+  var input = [];
   var inputCheck;
 
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', function(data) {
-    filesToCheck = filesToCheck.concat(data.split('\n'));
+    input = input.concat(data.split('\n'));
   });
 
   inputCheck = setTimeout(function() {
@@ -52,6 +75,6 @@ if (argv.files) {
   process.stdin.on('end', function() {
     clearTimeout(inputCheck);
 
-    findDeps(formatFileNames(filesToCheck));
+    output(input);
   });
 }
