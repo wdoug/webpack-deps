@@ -7,6 +7,10 @@ var yargs = require('yargs')
               .usage('Usage: \n$0 [stats.json file] --from [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
               .alias('f', 'from')
               .array('f')
+              .alias('d', 'dependencies')
+              .boolean('d')
+              .alias('D', 'dependents')
+              .boolean('D')
               .alias('c', 'count')
               .boolean('c')
               .alias('h', 'help')
@@ -33,26 +37,28 @@ function writeOut(arr) {
   });
 }
 
-function findDeps(filesToCheck) {
-  var dependentsMap = webpackDeps.getDependentsMap(stats);
-  writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), dependentsMap));
+function findDeps(filesToCheck, depsMap) {
+  writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), depsMap));
 }
 
-function outputDependentCount(from) {
-  var dependentsMap = webpackDeps.getDependentsMap(stats);
-  from = from || Object.keys(dependentsMap);
-  writeOut(from.map(function(d) {
-    return '' + (dependentsMap[d] ? dependentsMap[d].length : 0) + '\t' +  d;
+function outputDependentCount(startFrom, depsMap) {
+  startFrom = startFrom || Object.keys(depsMap);
+  writeOut(startFrom.map(function(d) {
+    return '' + (depsMap[d] ? depsMap[d].length : 0) + '\t' +  d;
   }));
 }
 
-function output(from) {
-  from = formatFileNames(from);
+function output(startFrom) {
+  startFrom = formatFileNames(startFrom);
+
+  var depGetter = argv.dependencies ? 'getDependenciesMap' : 'getDependentsMap';
+  console.log(argv.dependencies);
+  var depsMap = webpackDeps[depGetter](stats);
 
   if (argv.count) {
-    outputDependentCount(from);
+    outputDependentCount(startFrom, depsMap);
   } else {
-    findDeps(from);
+    findDeps(startFrom, depsMap);
   }
 }
 

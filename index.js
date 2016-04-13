@@ -5,6 +5,23 @@ function normalizeFileName(fileName) {
   return parts[parts.length - 1];
 }
 
+function getDependenciesMap(stats) {
+  var dependencyMap = Object.create(null);
+
+  stats.modules.forEach(function (module) {
+    module.reasons.forEach(function (dependant) {
+      var dependantName = normalizeFileName(dependant.module);
+      if (dependencyMap[dependantName]) {
+        dependencyMap[dependantName].push(module.name);
+      } else {
+        dependencyMap[dependantName] = [module.name];
+      }
+    });
+  });
+
+  return dependencyMap;
+}
+
 function getDependentsMap(stats) {
   return stats.modules.reduce(function (obj, module) {
     obj[normalizeFileName(module.name)] = module.reasons.map(function (dependant) {
@@ -43,6 +60,7 @@ function getAllDependentsForFiles(files, dependantsMap) {
 
 module.exports = {
   getDependentsMap: getDependentsMap,
+  getDependenciesMap: getDependenciesMap,
   getDirectDependentsForFiles: getDirectDependentsForFiles,
   getAllDependentsForFiles: getAllDependentsForFiles
 }
