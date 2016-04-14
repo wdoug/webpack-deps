@@ -103,7 +103,7 @@ if (argv.from) {
 
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', function(data) {
-    input = input.concat(data.split('\n'));
+    input = input.concat(data.split(/\s/));
   });
 
   inputCheck = setTimeout(function() {
