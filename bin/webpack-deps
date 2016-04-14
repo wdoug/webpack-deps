@@ -5,7 +5,7 @@ var path = require('path');
 var _ = require('lodash');
 var archy = require('archy');
 var yargs = require('yargs')
-              .usage('Usage: \n$0 [stats.json file] --from [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
+              .usage('Usage: \n$0 [stats.json file] --from [array of file names]\n\n or alternatively: \n\n[array of file names separated by newlines] | $0 [stats.json file]')
               .option('from', {
                 alias: 'f',
                 describe: 'list of files to start from',
@@ -23,7 +23,7 @@ var yargs = require('yargs')
               })
               .option('count', {
                 alias: 'c',
-                describe: 'display the number of dependencies / ancestors',
+                describe: 'display the number of immediate dependencies / dependents',
                 type: 'boolean'
               })
               .option('tree', {
@@ -49,9 +49,13 @@ var statsFilePath = path.join(process.cwd(), statsFileName);
 var stats = JSON.parse(fs.readFileSync(statsFilePath, 'utf8'));
 
 function formatFileNames(files) {
-  return files.map(function(file) {
-    return './' + path.join('.', file);
-  });
+  return files
+    .filter(function(file) {
+      return file.length > 0;
+    })
+    .map(function(file) {
+      return './' + path.join('.', file);
+    });
 }
 
 function writeOut(arr) {
@@ -67,7 +71,7 @@ function outputDepsList(filesToCheck, depsMap) {
 function outputDependentCount(startFrom, depsMap) {
   startFrom = startFrom || Object.keys(depsMap);
   writeOut(startFrom.map(function(d) {
-    return '' + (depsMap[d] ? depsMap[d].length : 0) + '\t' +  d;
+    return '' + (depsMap[d] ? depsMap[d].length : '-') + '\t' +  d;
   }));
 }
 
