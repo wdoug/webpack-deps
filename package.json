@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "find-deps": "node ./bin/find-deps",
+    "patch-release": "npm version patch && npm publish && git push --follow-tags",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
