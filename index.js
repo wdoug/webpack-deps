@@ -1,7 +1,9 @@
 var _ = require('lodash');
 
+var defaultMaxLevels = Infinity;
+
 function getFileTree(startFromFiles, depsMap, maxLevels) {
-  maxLevels = maxLevels || Number.Infinity; // Maybe there should be a default so as to avoid stack overflows
+  maxLevels = typeof maxLevels === "undefined" ? defaultMaxLevels : maxLevels;
   var cache = {};
   var rootNode = {
     label: '',
@@ -19,14 +21,14 @@ function getFileTree(startFromFiles, depsMap, maxLevels) {
 
         var deps = depsMap[fileName];
         var nextLevel = level + 1;
-        if (deps && deps.length > 0 && nextLevel <= maxLevels) {
+        if (deps && deps.length > 0 && nextLevel < maxLevels) {
           recursivelyBuildTree(deps, node, nextLevel);
         }
       }
 
       tree.nodes.push(cache[fileName]);
     });
-  })(startFromFiles, rootNode, 0);
+  })(startFromFiles, rootNode, -1);
 
   return rootNode;
 }
@@ -43,9 +45,9 @@ function getDependenciesMap(stats) {
     module.reasons.forEach(function (dependant) {
       var dependantName = normalizeFileName(dependant.module);
       if (dependencyMap[dependantName]) {
-        dependencyMap[dependantName].push(module.name);
+        dependencyMap[dependantName].push(normalizeFileName(module.name));
       } else {
-        dependencyMap[dependantName] = [module.name];
+        dependencyMap[dependantName] = [normalizeFileName(module.name)];
       }
     });
   });
@@ -68,22 +70,26 @@ function getDirectDependentsForFiles(files, dependantsMap) {
   }, []));
 }
 
-function getAllDependentsForFiles(files, dependantsMap) {
+function getAllDependentsForFiles(files, dependantsMap, maxLevels) {
+  maxLevels = typeof maxLevels === "undefined" ? defaultMaxLevels : maxLevels;
   var dependantsWeAlreadyHave = [];
   var allDependents = [];
 
-  (function recursivelyGetDependents(files) {
+  if (maxLevels === 0) {
+    return [];
+  }
+
+  (function recursivelyGetDependents(files, level) {
     var dependants = getDirectDependentsForFiles(files, dependantsMap);
     dependantsWeAlreadyHave = allDependents;
     allDependents = allDependents.concat(dependants);
 
     var newDependants = _.difference(allDependents, dependantsWeAlreadyHave);
 
-    if (newDependants.length > 0) {
-      return recursivelyGetDependents(newDependants);
+    if (newDependants.length > 0 && level < maxLevels) {
+      recursivelyGetDependents(newDependants, level + 1);
     }
-    return;
-  })(files);
+  })(files, 1);
 
   return _.uniq(allDependents);
 }

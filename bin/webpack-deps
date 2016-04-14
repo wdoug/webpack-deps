@@ -64,8 +64,8 @@ function writeOut(arr) {
   });
 }
 
-function outputDepsList(filesToCheck, depsMap) {
-  writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), depsMap));
+function outputDepsList(filesToCheck, depsMap, maxLevels) {
+  writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), depsMap, maxLevels));
 }
 
 function outputDependentCount(startFrom, depsMap) {
@@ -91,7 +91,7 @@ function output(startFrom) {
   } else if (argv.tree) {
     outputFileTree(startFrom, depsMap, argv.levels);
   } else {
-    outputDepsList(startFrom, depsMap);
+    outputDepsList(startFrom, depsMap, argv.levels);
   }
 }
 
