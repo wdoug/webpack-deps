@@ -3,16 +3,39 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
+var archy = require('archy');
 var yargs = require('yargs')
               .usage('Usage: \n$0 [stats.json file] --from [array of file names]\n\n or alternatively: \n\n[array of file names] | $0 [stats.json file]')
-              .alias('f', 'from')
-              .array('f')
-              .alias('d', 'dependencies')
-              .boolean('d')
-              .alias('D', 'dependents')
-              .boolean('D')
-              .alias('c', 'count')
-              .boolean('c')
+              .option('from', {
+                alias: 'f',
+                describe: 'list of files to start from',
+                type: 'array'
+              })
+              .option('dependencies', {
+                alias: 'd',
+                describe: 'walk down the dependency tree',
+                type: 'boolean'
+              })
+              .option('dependents', {
+                alias: 'D',
+                describe: 'walk up the dependency tree',
+                type: 'boolean'
+              })
+              .option('count', {
+                alias: 'c',
+                describe: 'display the number of dependencies / ancestors',
+                type: 'boolean'
+              })
+              .option('tree', {
+                alias: 't',
+                describe: 'output an ascii tree from the starting files',
+                type: 'boolean'
+              })
+              .option('levels', {
+                alias: 'l',
+                describe: 'specify the number of levels to walk',
+                type: 'number'
+              })
               .alias('h', 'help')
               .help();
 var argv = yargs.argv;
@@ -37,7 +60,7 @@ function writeOut(arr) {
   });
 }
 
-function findDeps(filesToCheck, depsMap) {
+function outputDepsList(filesToCheck, depsMap) {
   writeOut(webpackDeps.getAllDependentsForFiles(formatFileNames(filesToCheck), depsMap));
 }
 
@@ -48,17 +71,23 @@ function outputDependentCount(startFrom, depsMap) {
   }));
 }
 
+function outputFileTree(startFrom, depsMap, maxLevels) {
+  console.log(archy(webpackDeps.getFileTree(startFrom, depsMap, maxLevels)));
+}
+
 function output(startFrom) {
   startFrom = formatFileNames(startFrom);
 
   var depGetter = argv.dependencies ? 'getDependenciesMap' : 'getDependentsMap';
-  console.log(argv.dependencies);
+
   var depsMap = webpackDeps[depGetter](stats);
 
   if (argv.count) {
     outputDependentCount(startFrom, depsMap);
+  } else if (argv.tree) {
+    outputFileTree(startFrom, depsMap, argv.levels);
   } else {
-    findDeps(startFrom, depsMap);
+    outputDepsList(startFrom, depsMap);
   }
 }
 

@@ -1,5 +1,36 @@
 var _ = require('lodash');
 
+function getFileTree(startFromFiles, depsMap, maxLevels) {
+  maxLevels = maxLevels || Number.Infinity; // Maybe there should be a default so as to avoid stack overflows
+  var cache = {};
+  var rootNode = {
+    label: '',
+    nodes: []
+  };
+
+  (function recursivelyBuildTree(fromFiles, tree, level) {
+    fromFiles.forEach(function(fileName) {
+      if (!cache[fileName]) {
+        var node = {
+          label: fileName,
+          nodes: []
+        };
+        cache[fileName] = node;
+
+        var deps = depsMap[fileName];
+        var nextLevel = level + 1;
+        if (deps && deps.length > 0 && nextLevel <= maxLevels) {
+          recursivelyBuildTree(deps, node, nextLevel);
+        }
+      }
+
+      tree.nodes.push(cache[fileName]);
+    });
+  })(startFromFiles, rootNode, 0);
+
+  return rootNode;
+}
+
 function normalizeFileName(fileName) {
   var parts = fileName.split('!');
   return parts[parts.length - 1];
@@ -59,8 +90,9 @@ function getAllDependentsForFiles(files, dependantsMap) {
 
 
 module.exports = {
-  getDependentsMap: getDependentsMap,
-  getDependenciesMap: getDependenciesMap,
+  getAllDependentsForFiles: getAllDependentsForFiles,
   getDirectDependentsForFiles: getDirectDependentsForFiles,
-  getAllDependentsForFiles: getAllDependentsForFiles
-}
+  getDependenciesMap: getDependenciesMap,
+  getDependentsMap: getDependentsMap,
+  getFileTree: getFileTree
+};
